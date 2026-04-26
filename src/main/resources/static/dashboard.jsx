@@ -4,17 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, Tooltip, ResponsiveContainer } from "recharts";
 
 // Configuration
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "/api";
 
 const playSFX = (type) => {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if(audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        
+
         if (type === 'hover') {
             osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.05);
@@ -40,7 +40,7 @@ const playSFX = (type) => {
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
             osc.start(); osc.stop(audioCtx.currentTime + 0.3);
         }
-    } catch(e){}
+    } catch (e) { }
 };
 
 const MOCK_ACCOUNTS = [
@@ -65,26 +65,26 @@ function OpsDashboard() {
     const [accounts, setAccounts] = useState(MOCK_ACCOUNTS);
     const [transactions, setTransactions] = useState(MOCK_TX);
     const [meshState, setMeshState] = useState(MOCK_MESH);
-    
+
     const [stats, setStats] = useState({ settled: 0, duplicate: 0, invalid: 0 });
     const [gossipRounds, setGossipRounds] = useState(0);
     const [bridgeUploads, setBridgeUploads] = useState(0);
     const [isInjectFormOpen, setInjectFormOpen] = useState(false);
-    
+
     // Inject Form state
     const [injectSender, setInjectSender] = useState("alice@demo");
     const [injectReceiver, setInjectReceiver] = useState("bob@demo");
     const [injectAmount, setInjectAmount] = useState(500);
     const [injectPin, setInjectPin] = useState("1234");
-    
+
     const [loading, setLoading] = useState(false);
-    
+
     // Step state for pipeline
     const [pipelineState, setPipelineState] = useState(-1); // -1: default, 0-4
     const [pipelineOutcome, setPipelineOutcome] = useState(null); // SETTLED, DUPLICATE_DROPPED, INVALID
     const [pipelineHash, setPipelineHash] = useState("");
     const [terminalLogs, setTerminalLogs] = useState(["SYSTEM ONLINE // MESH OPS CENTER READY"]);
-    
+
     const addLog = (msg) => {
         setTerminalLogs(prev => [...prev.slice(-15), msg]);
     };
@@ -101,18 +101,18 @@ function OpsDashboard() {
                 fetch(`${API_BASE}/transactions`),
                 fetch(`${API_BASE}/mesh/state`),
             ]);
-            
+
             if (!accRes.ok || !txRes.ok || !meshRes.ok) throw new Error("API Not OK");
-            
+
             const accData = await accRes.json();
             const txData = await txRes.json();
             const meshData = await meshRes.json();
-            
+
             setAccounts(accData);
             setTransactions(txData);
             setMeshState(meshData);
             setMode("LIVE");
-            
+
             // Calculate stats
             let s = 0, d = 0, i = 0;
             txData.forEach(tx => {
@@ -121,7 +121,7 @@ function OpsDashboard() {
                 if (tx.status === "INVALID") i++;
             });
             setStats({ settled: s, duplicate: d, invalid: i });
-            
+
         } catch (e) {
             console.error("API Error, falling back to mock:", e);
             setMode("MOCK");
@@ -175,7 +175,7 @@ function OpsDashboard() {
                 // mock gossip
             }
             setGossipRounds(r => r + 1);
-            addLog(`> [GOSSIP ROUND ${gossipRounds+1}] Broadcasting via Bluetooth LE... Interfacing peers.`);
+            addLog(`> [GOSSIP ROUND ${gossipRounds + 1}] Broadcasting via Bluetooth LE... Interfacing peers.`);
             setTimeout(async () => {
                 await fetchData();
                 setAnimatingGossip(false);
@@ -196,25 +196,25 @@ function OpsDashboard() {
             setPipelineState(0); // hash
             setPipelineOutcome(null);
             setPipelineHash(Math.random().toString(16).substring(2, 8)); // mockup hash display
-            
+
             // Simulate steps
             for (let step = 1; step <= 4; step++) {
                 await new Promise(r => setTimeout(r, 300));
                 setPipelineState(step);
             }
-            
+
             let resultStatus = "SETTLED";
             if (mode === "LIVE") {
                 const res = await fetch(`${API_BASE}/mesh/flush`, { method: "POST" });
                 const statuses = await res.json();
                 if (statuses.length > 0) resultStatus = statuses[0].outcome; // get first for demo
             }
-            
+
             setPipelineOutcome(resultStatus);
             setBridgeUploads(u => u + 1);
             if (resultStatus === "SETTLED") { playSFX('success'); addLog(`> [SUCCESS] Transaction Settled & Committed to Ledger.`); }
             else { playSFX('click'); addLog(`> [REJECTED] Settlement dropped. Reason: ${resultStatus}`); }
-            
+
             setTimeout(async () => {
                 await fetchData();
                 setAnimatingFlush(false);
@@ -271,7 +271,7 @@ function OpsDashboard() {
 
             {/* THREE COLUMN LAYOUT */}
             <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-                
+
                 {/* ---------------- LEFT COLUMN: CONTROLS ---------------- */}
                 <div className="col-span-1 lg:col-span-3 flex flex-col gap-6">
                     {/* Controls Card */}
@@ -282,7 +282,7 @@ function OpsDashboard() {
                                 <span><span className="text-gray-500 mr-2">[01]</span> ► INJECT PAYMENT</span>
                                 <span className="text-cyan group-hover:drop-shadow-[0_0_5px_#00e5ff] transition-all duration-300"></span>
                             </button>
-                            
+
                             <AnimatePresence>
                                 {isInjectFormOpen && (
                                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-[#0a1520] p-3 border border-bordercolor text-xs rounded-sm">
@@ -325,11 +325,11 @@ function OpsDashboard() {
                                 <span><span className="text-gray-500 mr-2">[02]</span> ⟳ RUN GOSSIP ROUND</span>
                                 {gossipRounds > 0 && <span className="bg-amber/20 text-amber px-2 rounded-full">{gossipRounds}</span>}
                             </button>
-                            
+
                             <button onMouseEnter={() => playSFX('hover')} onClick={handleFlush} disabled={loading} className="w-full text-left px-4 py-3 bg-[#0a1520] border border-bordercolor hover:border-neonGreen border-l-[3px] hover:border-l-neonGreen transition-colors text-sm disabled:opacity-50">
                                 <span><span className="text-gray-500 mr-2">[03]</span> ◉ FLUSH BRIDGES</span>
                             </button>
-                            
+
                             <button onClick={handleReset} disabled={loading} className="w-full text-left px-4 py-3 bg-[#0a1520] border border-bordercolor hover:border-neonRed border-l-[3px] hover:border-l-neonRed transition-colors text-sm text-gray-400 hover:text-white disabled:opacity-50">
                                 <span><span className="text-gray-500 mr-2">[04]</span> ✕ RESET MESH</span>
                             </button>
@@ -344,33 +344,34 @@ function OpsDashboard() {
                                 const vpa = acc.vpa || acc.accountId;
                                 const n = acc.holderName || acc.name || (vpa && vpa.split('@')[0]) || '??';
                                 return (
-                                <motion.div key={vpa} 
-                                    className="relative p-2 bg-[#0a1520] rounded-sm group overflow-hidden"
-                                    initial={{ backgroundColor: '#0a1520' }}
-                                    animate={{ backgroundColor: '#0a1520' }}
-                                    // Complex flash logic requires previous state diffing, simplified here to motion key change
-                                    whileInView={{ transition: { duration: 0.5 } }}
-                                >
-                                    <div className="flex justify-between items-center mb-1 relative z-10">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-[#1a3a5c] flex items-center justify-center text-cyan uppercase font-bold text-sm border border-cyan/30">
-                                                {n.substring(0, 2)}
+                                    <motion.div key={vpa}
+                                        className="relative p-2 bg-[#0a1520] rounded-sm group overflow-hidden"
+                                        initial={{ backgroundColor: '#0a1520' }}
+                                        animate={{ backgroundColor: '#0a1520' }}
+                                        // Complex flash logic requires previous state diffing, simplified here to motion key change
+                                        whileInView={{ transition: { duration: 0.5 } }}
+                                    >
+                                        <div className="flex justify-between items-center mb-1 relative z-10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-[#1a3a5c] flex items-center justify-center text-cyan uppercase font-bold text-sm border border-cyan/30">
+                                                    {n.substring(0, 2)}
+                                                </div>
+                                                <span className="text-gray-300 font-heading tracking-wider">{n}</span>
                                             </div>
-                                            <span className="text-gray-300 font-heading tracking-wider">{n}</span>
+                                            <div className="font-mono text-cyan">₹{acc.balance}</div>
                                         </div>
-                                        <div className="font-mono text-cyan">₹{acc.balance}</div>
-                                    </div>
-                                    {/* Balance fraction bar */}
-                                    <div className="w-full h-1 bg-[#070d14] relative z-10">
-                                        <motion.div 
-                                            className="h-full bg-cyan/50"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${(acc.balance / maxBalance) * 100}%` }}
-                                            transition={{ type: "spring", stiffness: 50 }}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )})}
+                                        {/* Balance fraction bar */}
+                                        <div className="w-full h-1 bg-[#070d14] relative z-10">
+                                            <motion.div
+                                                className="h-full bg-cyan/50"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${(acc.balance / maxBalance) * 100}%` }}
+                                                transition={{ type: "spring", stiffness: 50 }}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>
@@ -380,50 +381,45 @@ function OpsDashboard() {
                 <div className="col-span-1 lg:col-span-6 flex flex-col gap-6">
                     <div className="cyber-card p-5 relative min-h-[500px] flex flex-col">
                         <h2 className="font-heading text-cyan text-xl tracking-widest mb-4 z-10 relative">⬡ MESH VISUALIZER</h2>
-                        
+
                         {/* Node Graph Area */}
                         <div className="flex-grow relative border border-bordercolor/50 bg-[#070d14] p-4 flex items-center justify-center overflow-hidden min-h-[300px]">
                             {/* SVG connections */}
-                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                                {/* Lines between nodes - abstract pentagon-like layout */}
-                                {['alice-bob', 'bob-charlie', 'charlie-dave', 'dave-alice', 'alice-charlie', 'bob-dave', 'bridge-alice', 'bridge-bob', 'bridge-charlie', 'bridge-dave'].map((line, i) => (
-                                    <g key={line}>
-                                        <line x1="50%" y1="50%" x2="50%" y2="50%" stroke="#1a3a5c" strokeWidth="1" className="opacity-50" />
-                                        {/* Simplification: actual layout below uses absolute CSS rather than precise SVG lines to avoid complex coordinate calculations in React for this demo, we'll draw simple decorative radial lines */}
-                                        <line x1="50%" y1="20%" x2="20%" y2="50%" stroke="#1a3a5c" strokeWidth="1" />
-                                        <line x1="50%" y1="20%" x2="80%" y2="50%" stroke="#1a3a5c" strokeWidth="1" />
-                                        <line x1="20%" y1="50%" x2="40%" y2="80%" stroke="#1a3a5c" strokeWidth="1" />
-                                        <line x1="80%" y1="50%" x2="60%" y2="80%" stroke="#1a3a5c" strokeWidth="1" />
-                                        <line x1="40%" y1="80%" x2="60%" y2="80%" stroke="#1a3a5c" strokeWidth="1" />
-                                        
-                                        {/* Gossip Animation Lines */}
-                                        {animatingGossip && (
-                                            <>
-                                                <motion.path 
-                                                    d="M 50% 20% L 20% 50%" 
-                                                    stroke="#00e5ff" strokeWidth="2" fill="none"
-                                                    initial={{ pathLength: 0, opacity: 1 }}
-                                                    animate={{ pathLength: 1, opacity: 0 }}
-                                                    transition={{ duration: 0.6, ease: "linear" }}
-                                                />
-                                                <motion.path 
-                                                    d="M 20% 50% L 40% 80%" 
-                                                    stroke="#00e5ff" strokeWidth="2" fill="none"
-                                                    initial={{ pathLength: 0, opacity: 1 }}
-                                                    animate={{ pathLength: 1, opacity: 0 }}
-                                                    transition={{ duration: 0.6, ease: "linear" }}
-                                                />
-                                                <motion.path 
-                                                    d="M 80% 50% L 60% 80%" 
-                                                    stroke="#00e5ff" strokeWidth="2" fill="none"
-                                                    initial={{ pathLength: 0, opacity: 1 }}
-                                                    animate={{ pathLength: 1, opacity: 0 }}
-                                                    transition={{ duration: 0.6, ease: "linear" }}
-                                                />
-                                            </>
-                                        )}
-                                    </g>
-                                ))}
+                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+                                <g>
+                                    <line x1="50" y1="20" x2="20" y2="50" stroke="#1a3a5c" strokeWidth="0.5" />
+                                    <line x1="50" y1="20" x2="80" y2="50" stroke="#1a3a5c" strokeWidth="0.5" />
+                                    <line x1="20" y1="50" x2="40" y2="80" stroke="#1a3a5c" strokeWidth="0.5" />
+                                    <line x1="80" y1="50" x2="60" y2="80" stroke="#1a3a5c" strokeWidth="0.5" />
+                                    <line x1="40" y1="80" x2="60" y2="80" stroke="#1a3a5c" strokeWidth="0.5" />
+
+                                    {/* Gossip Animation Lines */}
+                                    {animatingGossip && (
+                                        <>
+                                            <motion.path
+                                                d="M 50 20 L 20 50"
+                                                stroke="#00e5ff" strokeWidth="1" fill="none"
+                                                initial={{ pathLength: 0, opacity: 1 }}
+                                                animate={{ pathLength: 1, opacity: 0 }}
+                                                transition={{ duration: 0.6, ease: "linear" }}
+                                            />
+                                            <motion.path
+                                                d="M 20 50 L 40 80"
+                                                stroke="#00e5ff" strokeWidth="1" fill="none"
+                                                initial={{ pathLength: 0, opacity: 1 }}
+                                                animate={{ pathLength: 1, opacity: 0 }}
+                                                transition={{ duration: 0.6, ease: "linear" }}
+                                            />
+                                            <motion.path
+                                                d="M 80 50 L 60 80"
+                                                stroke="#00e5ff" strokeWidth="1" fill="none"
+                                                initial={{ pathLength: 0, opacity: 1 }}
+                                                animate={{ pathLength: 1, opacity: 0 }}
+                                                transition={{ duration: 0.6, ease: "linear" }}
+                                            />
+                                        </>
+                                    )}
+                                </g>
                             </svg>
 
                             {/* Node: Bridge (top center) */}
@@ -495,7 +491,7 @@ function OpsDashboard() {
 
                                     return (
                                         <div key={step} className="flex flex-col items-center">
-                                            <motion.div 
+                                            <motion.div
                                                 className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all duration-300 ${color}`}
                                                 animate={active ? { scale: [1, 1.1, 1] } : {}}
                                             >
@@ -506,12 +502,12 @@ function OpsDashboard() {
                                     );
                                 })}
                             </div>
-                            
+
                             {/* Outcome Badge overlay */}
                             <div className="absolute top-4 right-0 flex gap-4 items-center">
                                 {pipelineHash && <span className="text-purple font-mono text-xs">SHA: {pipelineHash}</span>}
                                 {pipelineOutcome && (
-                                    <motion.span 
+                                    <motion.span
                                         initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                                         className={`px-3 py-1 font-mono text-xs border rounded-sm font-bold
                                             ${pipelineOutcome === 'SETTLED' ? 'border-neonGreen text-neonGreen bg-[#39ff1411]' : ''}
@@ -534,7 +530,7 @@ function OpsDashboard() {
                             <div className="bg-[#050a0f] border border-[#1a3a5c] rounded p-3 flex-grow font-mono text-[10px] text-cyan/70 overflow-y-auto font-bold flex flex-col justify-end relative shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
                                 <AnimatePresence>
                                     {terminalLogs.map((log, i) => (
-                                        <motion.div key={i} initial={{opacity:0, x:-5}} animate={{opacity:1, x:0}} className="mb-0.5 whitespace-pre-wrap">
+                                        <motion.div key={i} initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} className="mb-0.5 whitespace-pre-wrap">
                                             <span className="text-gray-600">[{new Date().toLocaleTimeString()}]</span> {log}
                                         </motion.div>
                                     ))}
@@ -552,15 +548,15 @@ function OpsDashboard() {
                     <div className="grid grid-cols-3 gap-3">
                         <div className="cyber-card p-3 flex flex-col justify-between items-center text-center">
                             <span className="font-heading text-[10px] text-gray-400">TOTAL SETTLED</span>
-                            <motion.span key={stats.settled} initial={{scale:1.5}} animate={{scale:1}} className="font-mono text-2xl text-neonGreen">{stats.settled}</motion.span>
+                            <motion.span key={stats.settled} initial={{ scale: 1.5 }} animate={{ scale: 1 }} className="font-mono text-2xl text-neonGreen">{stats.settled}</motion.span>
                         </div>
                         <div className="cyber-card p-3 flex flex-col justify-between items-center text-center bg-[#0d1825]">
                             <span className="font-heading text-[10px] text-gray-400">DUPLICATES</span>
-                            <motion.span key={stats.duplicate} initial={{scale:1.5}} animate={{scale:1}} className="font-mono text-2xl text-amber">{stats.duplicate}</motion.span>
+                            <motion.span key={stats.duplicate} initial={{ scale: 1.5 }} animate={{ scale: 1 }} className="font-mono text-2xl text-amber">{stats.duplicate}</motion.span>
                         </div>
                         <div className="cyber-card p-3 flex flex-col justify-between items-center text-center">
                             <span className="font-heading text-[10px] text-gray-400">INVALID</span>
-                            <motion.span key={stats.invalid} initial={{scale:1.5}} animate={{scale:1}} className="font-mono text-2xl text-neonRed">{stats.invalid}</motion.span>
+                            <motion.span key={stats.invalid} initial={{ scale: 1.5 }} animate={{ scale: 1 }} className="font-mono text-2xl text-neonRed">{stats.invalid}</motion.span>
                         </div>
                     </div>
 
@@ -570,7 +566,7 @@ function OpsDashboard() {
                         <div className="flex-grow">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData}>
-                                    <Tooltip cursor={{fill: '#1a3a5c'}} contentStyle={{backgroundColor: '#0d1825', border: '1px solid #1a3a5c'}}/>
+                                    <Tooltip cursor={{ fill: '#1a3a5c' }} contentStyle={{ backgroundColor: '#0d1825', border: '1px solid #1a3a5c' }} />
                                     <Bar dataKey="settled" stackId="a" fill="#39ff14" />
                                     <Bar dataKey="dropped" stackId="a" fill="#ffb800" />
                                 </BarChart>
@@ -584,34 +580,34 @@ function OpsDashboard() {
                         <div className="flex-grow overflow-y-auto pr-2 flex flex-col gap-2">
                             <AnimatePresence>
                                 {transactions.length === 0 ? <div className="text-gray-500 font-mono text-sm text-center mt-10">No transactions recorded</div> :
-                                 transactions.map((tx, idx) => (
-                                    <motion.div 
-                                        key={tx.id || idx}
-                                        initial={{ opacity: 0, y: -20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`flex flex-col p-2 text-xs font-mono border-l-2 ${idx % 2 === 0 ? 'bg-[#0d1825]' : 'bg-[#0a1520]'} 
+                                    transactions.map((tx, idx) => (
+                                        <motion.div
+                                            key={tx.id || idx}
+                                            initial={{ opacity: 0, y: -20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className={`flex flex-col p-2 text-xs font-mono border-l-2 ${idx % 2 === 0 ? 'bg-[#0d1825]' : 'bg-[#0a1520]'} 
                                             ${tx.status === 'SETTLED' ? 'border-neonGreen' : tx.status === 'DUPLICATE_DROPPED' ? 'border-amber' : 'border-neonRed'}
                                         `}
-                                    >
-                                        <div className="flex justify-between items-center text-gray-400 mb-1">
-                                            <span>{new Date(tx.settledAt).toLocaleTimeString()}</span>
-                                            <span className="text-purple ml-2">{tx.packetHash ? tx.packetHash.substring(0,6) : '??????'}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-white">
-                                                {tx.senderId?.split('-')[1] || '?'} → {tx.receiverId?.split('-')[1] || '?'}
-                                            </span>
-                                            <span className="font-bold text-cyan">₹{tx.amount || 0}</span>
-                                        </div>
-                                        <div className="mt-1">
-                                            <span className={`px-1.5 py-0.5 rounded-sm text-[10px] 
+                                        >
+                                            <div className="flex justify-between items-center text-gray-400 mb-1">
+                                                <span>{new Date(tx.settledAt).toLocaleTimeString()}</span>
+                                                <span className="text-purple ml-2">{tx.packetHash ? tx.packetHash.substring(0, 6) : '??????'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-white">
+                                                    {tx.senderId?.split('-')[1] || '?'} → {tx.receiverId?.split('-')[1] || '?'}
+                                                </span>
+                                                <span className="font-bold text-cyan">₹{tx.amount || 0}</span>
+                                            </div>
+                                            <div className="mt-1">
+                                                <span className={`px-1.5 py-0.5 rounded-sm text-[10px] 
                                                 ${tx.status === 'SETTLED' ? 'bg-neonGreen text-black' : tx.status === 'DUPLICATE_DROPPED' ? 'bg-amber text-black' : 'bg-neonRed text-white'}
                                             `}>
-                                                {tx.status}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-                                )).reverse()}
+                                                    {tx.status}
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    )).reverse()}
                             </AnimatePresence>
                         </div>
                     </div>
@@ -632,7 +628,7 @@ function OpsDashboard() {
 
 function LandingPage({ onEnter }) {
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
             transition={{ duration: 0.8 }}
             className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#070d14]"
@@ -642,9 +638,9 @@ function LandingPage({ onEnter }) {
             <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50"></div>
             <div className="absolute bottom-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan to-transparent opacity-50"></div>
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwyMjksMjU1LDAuMDUpIi8+PC9zdmc+')] opacity-20"></div>
-            
+
             <div className="z-10 text-center flex flex-col items-center max-w-4xl px-6 relative">
-                <motion.div 
+                <motion.div
                     initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.8 }}
                     className="mb-8 w-24 h-24 border border-cyan/40 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(0,229,255,0.15)] relative"
                 >
@@ -652,22 +648,22 @@ function LandingPage({ onEnter }) {
                     <div className="absolute inset-0 rounded-full border border-cyan/30 animate-ping opacity-20"></div>
                     <span className="text-4xl text-cyan">◈</span>
                 </motion.div>
-                
-                <motion.h1 
+
+                <motion.h1
                     initial={{ y: 20, opacity: 0, letterSpacing: "1em" }} animate={{ y: 0, opacity: 1, letterSpacing: "0.2em" }} transition={{ delay: 0.4, duration: 1, ease: "easeOut" }}
                     className="text-5xl md:text-7xl font-heading text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan mb-2 drop-shadow-[0_0_20px_rgba(0,229,255,0.5)]"
                 >
                     GHOSTPAY
                 </motion.h1>
-                
-                <motion.h2 
+
+                <motion.h2
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.8 }}
                     className="text-lg md:text-xl font-mono text-cyan/80 tracking-[0.2em] mb-12"
                 >
                     ZERO-SIGNAL PAYMENT NETWORK
                 </motion.h2>
-                
-                <motion.div 
+
+                <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0, duration: 0.8 }}
                     className="flex flex-col sm:flex-row gap-4 sm:gap-8 font-mono text-xs sm:text-sm text-gray-400 mb-16 tracking-wider"
                 >
@@ -675,8 +671,8 @@ function LandingPage({ onEnter }) {
                     <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-amber rounded-full shadow-[0_0_5px_#ffb800]"></div> MESH-ROUTED</span>
                     <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-purple rounded-full shadow-[0_0_5px_#9d4edd]"></div> TAMPER-PROOF</span>
                 </motion.div>
-                
-                <motion.button 
+
+                <motion.button
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.8 }}
                     whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(0,229,255,0.5)", textShadow: "0 0 8px rgba(0,0,0,1)" }}
                     whileTap={{ scale: 0.95 }}
@@ -689,7 +685,7 @@ function LandingPage({ onEnter }) {
                     [ ENTER ]
                 </motion.button>
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 1 }}
                     className="font-mono text-sm tracking-widest"
                 >
@@ -718,7 +714,7 @@ function ArchitectureScreen({ onProceed }) {
             { s: 4, text: "> Idempotency CHECK PASSED.\n> RSA Decrypt OK. Signature Valid." },
             { s: 4, text: "> DB Transaction: DEBIT Offline Sender, CREDIT Receiver.\n> SETTLEMENT COMPLETE." }
         ];
-        
+
         let i = 0;
         const interval = setInterval(() => {
             if (i < events.length) {
@@ -737,33 +733,33 @@ function ArchitectureScreen({ onProceed }) {
     }, []);
 
     useEffect(() => {
-        if(logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+        if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
     }, [logs]);
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, y: -50 }}
             transition={{ duration: 0.8 }}
             className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 bg-[#070d14] relative overflow-hidden"
         >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan/10 via-[#070d14] to-[#070d14]"></div>
-            
-            <motion.h2 
+
+            <motion.h2
                 initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
                 className="text-2xl sm:text-4xl lg:text-5xl font-heading text-cyan tracking-[0.2em] mb-8 lg:mb-12 drop-shadow-[0_0_10px_rgba(0,229,255,0.4)] relative z-10 text-center uppercase"
             >
                 ⬡ REAL-TIME MESH SIMULATION ⬡
             </motion.h2>
-            
+
             <div className="flex flex-col lg:flex-row items-center justify-center gap-4 w-full max-w-6xl relative z-10 font-mono text-sm mb-12">
-                
+
                 {/* Stage 1 */}
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className={`cyber-card p-4 w-full lg:w-1/4 flex flex-col items-center text-center transition-all duration-500 ${activeStage === 1 ? 'border-cyan shadow-[0_0_30px_rgba(0,229,255,0.3)] bg-[#0d1825]' : 'border-gray-800 bg-[#070d14] opacity-50'}`}>
                     <div className={`w-14 h-14 rounded-full border flex items-center justify-center text-xl mb-3 ${activeStage === 1 ? 'border-cyan text-cyan animate-pulse' : 'border-gray-600 text-gray-500'}`}>📱</div>
                     <h3 className={`font-bold mb-2 tracking-[0.1em] ${activeStage === 1 ? 'text-white' : 'text-gray-500'}`}>OFFLINE SENDER</h3>
                     <p className="text-gray-400 text-[10px] leading-relaxed">Payment wrapped in AES-GCM + RSA Hybrid Encryption.</p>
                 </motion.div>
-                
+
                 <div className={`text-2xl hidden lg:block transition-colors duration-500 ${activeStage === 1 ? 'text-cyan animate-pulse drop-shadow-[0_0_8px_#00e5ff]' : 'text-gray-800'}`}>➔</div>
                 <div className={`rotate-90 lg:hidden py-1 transition-colors duration-500 ${activeStage === 1 ? 'text-cyan animate-pulse drop-shadow-[0_0_8px_#00e5ff]' : 'text-gray-800'}`}>➔</div>
 
@@ -775,7 +771,7 @@ function ArchitectureScreen({ onProceed }) {
                     <h3 className={`font-bold mb-2 tracking-[0.1em] ${activeStage === 2 ? 'text-amber' : 'text-gray-500'}`}>BLUETOOTH MESH</h3>
                     <p className="text-gray-400 text-[10px] leading-relaxed">Opaque ciphertexts hop device-to-device via BLE gossip.</p>
                 </motion.div>
-                
+
                 <div className={`text-2xl hidden lg:block transition-colors duration-500 ${activeStage === 2 ? 'text-amber animate-pulse drop-shadow-[0_0_8px_#ffb800]' : 'text-gray-800'}`}>➔</div>
                 <div className={`rotate-90 lg:hidden py-1 transition-colors duration-500 ${activeStage === 2 ? 'text-amber animate-pulse drop-shadow-[0_0_8px_#ffb800]' : 'text-gray-800'}`}>➔</div>
 
@@ -785,7 +781,7 @@ function ArchitectureScreen({ onProceed }) {
                     <h3 className={`font-bold mb-2 tracking-[0.1em] ${activeStage === 3 ? 'text-neonGreen' : 'text-gray-500'}`}>BRIDGE UPLOAD</h3>
                     <p className="text-gray-400 text-[10px] leading-relaxed">Mesh node gains 4G and pushes cached packets to server.</p>
                 </motion.div>
-                
+
                 <div className={`text-2xl hidden lg:block transition-colors duration-500 ${activeStage === 3 ? 'text-neonGreen animate-pulse drop-shadow-[0_0_8px_#39ff14]' : 'text-gray-800'}`}>➔</div>
                 <div className={`rotate-90 lg:hidden py-1 transition-colors duration-500 ${activeStage === 3 ? 'text-neonGreen animate-pulse drop-shadow-[0_0_8px_#39ff14]' : 'text-gray-800'}`}>➔</div>
 
@@ -795,7 +791,7 @@ function ArchitectureScreen({ onProceed }) {
                     <h3 className={`font-bold mb-2 tracking-[0.1em] ${activeStage === 4 ? 'text-purple' : 'text-gray-500'}`}>SETTLEMENT</h3>
                     <p className="text-gray-400 text-[10px] leading-relaxed">Hash Idempotency → Decrypt → Ledger Execution.</p>
                 </motion.div>
-                
+
             </div>
 
             {/* Simulated Live Log Terminal */}
@@ -811,8 +807,8 @@ function ArchitectureScreen({ onProceed }) {
                     <div className="inline-block w-2 h-4 bg-cyan animate-pulse mt-2">&nbsp;</div>
                 </div>
             </motion.div>
-            
-            <motion.button 
+
+            <motion.button
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5, duration: 0.8 }}
                 whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(0,229,255,0.5)" }}
                 whileTap={{ scale: 0.95 }}
@@ -831,7 +827,7 @@ function Dashboard() {
         <AnimatePresence mode="wait">
             {step === 0 && <LandingPage key="landing" onEnter={() => setStep(1)} />}
             {step === 1 && <ArchitectureScreen key="arch" onProceed={() => setStep(2)} />}
-            {step === 2 && <motion.div key="dash" initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.8}}><OpsDashboard /></motion.div>}
+            {step === 2 && <motion.div key="dash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}><OpsDashboard /></motion.div>}
         </AnimatePresence>
     );
 }
